@@ -2,9 +2,9 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Lucas Azambuja</title>
-    <link>https://lucasazambuja.dev/</link>
+    <link>https://lucas-azambuja.github.io/</link>
     <description>Recent content on Lucas Azambuja</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language><atom:link href="https://lucasazambuja.dev/index.xml" rel="self" type="application/rss+xml" />
+    <language>en-us</language><atom:link href="https://lucas-azambuja.github.io/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>
