@@ -70,12 +70,32 @@
     @media (prefers-color-scheme: dark) {
       :root { color-scheme: dark; --background: #111315; --text: #eef0f4; --muted: #a4abb7; }
     }
+
+    .runner {
+      appearance: none;
+      position: relative;
+      border: 0;
+      margin: 0;
+      padding: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      line-height: inherit;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .runner::after { content: ""; position: absolute; inset: -.5rem -.25rem; }
+    .runner:hover { color: var(--text); }
+    .runner:focus-visible { outline: 2px solid currentColor; outline-offset: 5px; border-radius: 2px; }
+    .runner-word { display: inline-block; }
+    .runner[data-running] .runner-word { visibility: hidden; }
+    .runner-ghost { position: fixed; z-index: 10; pointer-events: none; white-space: nowrap; }
   </style>
 </head>
 <body>
   <main>
     <h1>Lucas Azambuja</h1>
-    <p lang="en">I keep things running</p>
+    <p lang="en">I keep things <button class="runner" type="button" title="Make it run" aria-label="running — play animation"><span class="runner-word">running</span></button></p>
     <nav aria-label="Contatos">
       <a href="mailto:lucasazambuja42@gmail.com">E-mail</a>
       <a href="https://www.linkedin.com/in/lucasazambuja/">LinkedIn</a>
@@ -83,5 +103,93 @@
       <a href="https://twitter.com/lucasazambuja42">X / Twitter</a>
     </nav>
   </main>
+
+  <script>
+    (() => {
+      const button = document.querySelector(".runner");
+      const word = button.querySelector(".runner-word");
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let active = null;
+
+      const stop = () => active?.cancel();
+
+      button.addEventListener("click", async () => {
+        if (active || typeof word.animate !== "function") return;
+
+        let ghost = null;
+        try {
+          if (reducedMotion.matches) {
+            active = word.animate(
+              [{ opacity: 1 }, { opacity: 0.5 }, { opacity: 1 }],
+              { duration: 300, easing: "ease-in-out" }
+            );
+          } else {
+            const rect = word.getBoundingClientRect();
+            const viewport = window.visualViewport;
+            const viewportLeft = viewport?.offsetLeft ?? 0;
+            const viewportTop = viewport?.offsetTop ?? 0;
+            const width = viewport?.width ?? document.documentElement.clientWidth;
+            const height = viewport?.height ?? document.documentElement.clientHeight;
+            const margin = 24;
+            const left = viewportLeft + margin;
+            const top = viewportTop + margin;
+            const right = Math.max(left, viewportLeft + width - rect.width - margin);
+            const bottom = Math.max(top, viewportTop + height - rect.height - margin);
+            const startY = Math.min(bottom, Math.max(top, rect.top));
+            const style = getComputedStyle(word);
+
+            ghost = document.createElement("span");
+            ghost.className = "runner-ghost";
+            ghost.textContent = word.textContent;
+            ghost.setAttribute("aria-hidden", "true");
+            Object.assign(ghost.style, {
+              left: rect.left + "px",
+              top: rect.top + "px",
+              fontFamily: style.fontFamily,
+              fontSize: style.fontSize,
+              fontWeight: style.fontWeight,
+              fontStyle: style.fontStyle,
+              lineHeight: style.lineHeight,
+              letterSpacing: style.letterSpacing,
+              color: style.color
+            });
+            document.body.append(ghost);
+
+            const points = [
+              [rect.left, rect.top, 0],
+              [right, startY, -8],
+              [right, top, -8],
+              [left, top, 8],
+              [left, bottom, 8],
+              [right, bottom, -8],
+              [rect.left, rect.top, 0]
+            ];
+            const frames = points.map(([x, y, angle]) => ({
+              transform: "translate(" + (x - rect.left) + "px, " + (y - rect.top) + "px) rotate(" + angle + "deg)"
+            }));
+
+            active = ghost.animate(frames, { duration: 2800, easing: "ease-in-out" });
+            button.setAttribute("data-running", "");
+          }
+
+          await active.finished;
+        } catch {
+        } finally {
+          ghost?.remove();
+          button.removeAttribute("data-running");
+          active = null;
+        }
+      });
+
+      window.addEventListener("resize", stop, { passive: true });
+      window.addEventListener("scroll", stop, { passive: true });
+      window.visualViewport?.addEventListener("resize", stop, { passive: true });
+      window.visualViewport?.addEventListener("scroll", stop, { passive: true });
+      reducedMotion.addEventListener("change", stop);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) stop();
+      });
+    })();
+  </script>
 </body>
 </html>
